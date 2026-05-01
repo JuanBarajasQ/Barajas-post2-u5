@@ -62,3 +62,40 @@ VBoxManage modifyvm "Lab5-Alpine" --nic1 bridged --bridgeadapter1
 "Ethernet"
 # La VM obtiene IP del router de la red local (DHCP)
 # Verificar con: ip addr show eth0 dentro de la VM
+
+#CHECKPOINT 4 SNAPSHOTS
+# La VM debe estar encendida para tomar un snapshot en caliente
+# (con contenido de RAM incluido)
+# Tomar snapshot del estado base (Alpine recién instalado)
+VBoxManage snapshot "Lab5-Alpine" take "snap_base" ^
+ --description "Alpine Linux 3.19 recién instalado, sin modificaciones"
+# Instalar software adicional dentro de la VM
+# (conectar a NAT primero si se estaba usando Host-Only)
+lab5-vm:~# apk update
+lab5-vm:~# apk add curl wget nano htop
+# Tomar segundo snapshot con el software instalado
+VBoxManage snapshot "Lab5-Alpine" take "snap_con_herramientas" ^
+ --description "Alpine con curl, wget, nano y htop instalados"
+# Verificar la lista de snapshots
+VBoxManage snapshot "Lab5-Alpine" list
+# Restaurar al estado base (sin desinstalar el software manualmente)
+VBoxManage controlvm "Lab5-Alpine" poweroff
+VBoxManage snapshot "Lab5-Alpine" restore "snap_base"
+VBoxManage startvm "Lab5-Alpine" --type gui
+# Verificar que curl ya no está disponible (apk info curl devuelve
+vacío)
+
+#CHECKPOINT 5 EXPORTAR OVA
+# Apagar la VM antes de exportar
+VBoxManage controlvm "Lab5-Alpine" poweroff
+# Exportar la VM en formato OVA (OVF comprimido, un solo archivo)
+VBoxManage export "Lab5-Alpine" ^
+ --output "Lab5-Alpine-export.ova" ^
+ --manifest ^
+ --options manifest
+# Verificar el archivo exportado
+dir Lab5-Alpine-export.ova # Windows
+ls -lh Lab5-Alpine-export.ova # Linux/macOS
+# El archivo .ova puede importarse en otra instalación de VirtualBox o
+VMware
+# con: VBoxManage import Lab5-Alpine-export.ova
